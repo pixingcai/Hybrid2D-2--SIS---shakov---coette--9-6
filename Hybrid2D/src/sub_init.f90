@@ -348,7 +348,7 @@
               allocate(B%ATSVX(-3:nx+3,-3:ny+3),B%ATSVY(-3:nx+3,-3:ny+3)) 
               allocate(B%DUFRD(NRD,-3:nx+3,-3:ny+3),B%RHSFRD(NRD,-3:nx+3,-3:ny+3)) 
 
-              allocate(B%S_GKUA(Nsum,-3:nx+3,-3:ny+3),B%BNIRHS(6,-3:nx+3,-3:ny+3),B%S00_GKUA(5,-3:nx+3,-3:ny+3))
+              allocate(B%S_GKUA(Nsum,-3:nx+3,-3:ny+3),B%BNIRHS(6,-3:nx+3,-3:ny+3),B%S00_GKUA(Nsum,-3:nx+3,-3:ny+3))
                allocate(B%S1_GKUA(Nsum,-3:nx+3,-3:ny+3))
                allocate(B%HOT_GKUA(6,-3:nx+3,-3:ny+3),B%HOQ_GKUA(4,-3:nx+3,-3:ny+3)) 
               allocate(B%S0_GKUA(Nsum,-3:nx+3,-3:ny+3),B%CF00(1-LAP:nx+LAP-1,1-LAP:ny+LAP-1))
@@ -399,7 +399,6 @@
 	
 !-------------------------------------------------------------------
     d0=1.d0; u0=1.d0*cos(AoA); v0=1.d0*sin(AoA) ; p0=1.d0/(gamma*Ma*Ma)
-    d0=1.d0; u0=0.0; v0=0.0 ; p0=1.d0/(gamma*Ma*Ma)
     Twall=Twall/T_inf
 
     T00=1.0

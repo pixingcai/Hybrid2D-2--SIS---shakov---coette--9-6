@@ -102,56 +102,114 @@
     !-------------------------------------------------------------------------
     Subroutine GKUA_boundary_farfield(nMesh,mBlock,ksub)
       use Global_var
-      use Com_ctrl
+      use com_ctrl
       use const_var ,only :sp,dop
       implicit none
-      Integer :: nMesh,mBlock,ksub
-      integer:: iv,jv,iv1,jv1,i,j,nx,ny,ird,ibegin ,iend,jbegin,jend
-      integer:: pos_x,pos_y,pos_x1,pos_y1,ijwall(2),icheck,jcheck
-      real(sp) ::FRDtmp,wall_u,wall_v
-    
+      integer:: iv,jv,iv1,jv1,i,j
+      integer:: nx,ny
+      integer:: NMesh,mBlock,ksub,ibegin,iend,jbegin,jend,i1,j1,i2,j2,k
+      real(sp)::FRDtmp,TIJtmp,viu,vjv,vij2,GDVijv
+      real(sp):: d1,u1,v1,p1,c1,d2,u2,v2,p2,pb,db,ub,vb
+      real(sp):: dx,dy,s,Ma_n
+      real(sp):: d_inf,u_inf,v_inf,n1,n2 ,temp_rho,temp_u,temp_v
+   
+      
       Type (Block_TYPE),pointer:: B
       Type (Mesh_TYPE),pointer:: MP
       Type (BC_MSG_TYPE),pointer:: Bc
+                     
+!  本软件目前用来计算外流，给定无穷远条件
+     d_inf=1.d0; u_inf=1.d0*cos(AoA); v_inf=1.d0*sin(AoA) ; p_inf=1.d0/(gamma*Ma*Ma)
+
+     MP=>Mesh(nMesh)
+     B => MP%Block(mBlock)
+     Bc => B%bc_msg(ksub)
+
+     ibegin=Bc%ist; iend=Bc%iend; jbegin=Bc%jst; jend=Bc%jend      
       
-       MP=>Mesh(1)   
-       B => MP%Block(mBlock)
-       nx=B%nx; ny=B%ny
-       Bc=> B%bc_msg(ksub)
-       wall_u=0.14828
-       wall_v=0
-       ibegin=Bc%ist; iend=Bc%iend; jbegin=Bc%jst; jend=Bc%jend  
-       do i=ibegin,iend    
        do j=jbegin,jend
-                 icheck=max(ibegin,iend)
-                 jcheck=max(jbegin,jend)
-                 if((jbegin==jend .and.i==icheck).or.(ibegin==iend.and.j==jcheck))then
-                     cycle
-                 end if
-                if(Bc%face .eq. 1 ) then 
-                    pos_x=1;pos_y=j;pos_x1=2;pos_y1=j;ijwall(1)=-3;ijwall(2)=j
-                else if(Bc%face .eq. 2 ) then 
-                    pos_x=i;pos_y=1;pos_x1=i;pos_y1=2;ijwall(1)=i;ijwall(2)=-3
-                else if(Bc%face .eq. 3 ) then 
-                    pos_x=nx-1;pos_y=j;pos_x1=nx-2;pos_y1=j;ijwall(1)=nx+3;ijwall(2)=j
-                else if(Bc%face .eq. 4 ) then 
-                    pos_x=i;pos_y=ny-1;pos_x1=i;pos_y1=ny-2;ijwall(1)=i;ijwall(2)=ny+3
-                end if
-         !   write(*,*)ijwall(1),ijwall(2),mBlock,ksub
-                  DO jv=GKUA_JST,GKUA_JEND
-                  DO iv=GKUA_IST,GKUA_IEND
-                     do ird=1,NRD
-                        FRDtmp=(-B%FRD(ird,pos_x1,pos_y1,iv,jv)+ 3.*B%FRD(ird,pos_x,pos_y,iv,jv))*0.5
-                        if(FRDtmp.LE.0.)FRDtmp=B%FRD(ird,pos_x,pos_y,iv,jv)
-                        if(FRDtmp.GE.1.5*B%FRD(ird,pos_x,pos_y,iv,jv))FRDtmp=1.5*B%FRD(ird,pos_x,pos_y,iv,jv)
-                        B%FRD(ird,ijwall(1),ijwall(2),iv,jv)=FRDtmp
-                     enddo
-                  ENDDO
-                  ENDDO
-       enddo
-       enddo
-       call GKUA_wall_boundary (mBlock,ksub,wall_u,wall_v)
-      ! call DETFPwall(mBlock,ksub)
+       do i=ibegin,iend
+!-----------------------------------------------------------------
+ !  (i1,j1) 是靠近边界的内点， (i2,j2) 是边界外的Ghost Cell点    
+         if(Bc%face .eq. 1) then       ! i- 面， 
+           i1=i; j1=j  
+         else if(Bc%face .eq. 2) then  ! j- 面
+           i1=i; j1=j
+         else if(Bc%face .eq. 3) then  ! i+ 面 (i=ibegin=iend=nx), i1=i-1 是内点, i2=i=nx是Ghost Cell
+           i1=i-1; j1=j
+         else
+           i1=i; j1=j-1
+         endif
+            d1=B%U(1,i1,j1) ;   u1=B%U(2,i1,j1)/d1 ;     v1=B%U(3,i1,j1)/d1
+            p1=(B%U(4,i1,j1)-0.5d0*d1*(u1*u1+v1*v1))*(gamma-1.d0)              ! 内点处的值
+            c1=sqrt(gamma*p1/d1) 
+
+!   计算边界 外 法方向       
+          if( Bc%face .eq. 1 ) then 
+             dx=B%x(i,j+1)-B%x(i,j) ;    dy=B%y(i,j+1)-B%y(i,j);  s=sqrt(dx*dx+dy*dy)
+             n1=-dy/s; n2= dx/s    ! 外法线  
+          else if(Bc%face .eq. 3) then 
+             dx=B%x(i,j+1)-B%x(i,j) ;    dy=B%y(i,j+1)-B%y(i,j);  s=sqrt(dx*dx+dy*dy)
+             n1=dy/s; n2= -dx/s    ! 外法线  
+          else if(Bc%face .eq. 2) then
+             dx=B%x(i+1,j)-B%x(i,j) ;   dy=B%y(i+1,j)-B%y(i,j) ;  s=sqrt(dx*dx+dy*dy)   
+             n1=dy/s; n2=-dx/s      ! 外法线 
+          else
+             dx=B%x(i+1,j)-B%x(i,j) ;   dy=B%y(i+1,j)-B%y(i,j) ;  s=sqrt(dx*dx+dy*dy)   
+             n1=-dy/s; n2=dx/s        ! 外法线 
+          endif
+            Ma_n=(u_inf*n1+v_inf*n2)*Ma    ! 以无穷远来流量计算 （避免了出口回流区的误算，2012-5-23）
+
+!-------------------------------------------------------------------------------------------
+          do k=1,LAP
+	       if(Bc%face .eq. 1) then       ! i- 面， 
+             i2=i-k ; j2=j  
+           else if(Bc%face .eq. 2) then  ! j- 面
+             i2=i; j2=j-k
+           else if(Bc%face .eq. 3) then  ! i+ 面 (i=ibegin=iend=nx), i1=i-1 是内点, i2=i=nx是Ghost Cell
+             i2=i+k-1; j2=j
+           else
+            i2=i; j2=j+k-1
+          endif
+	   
+	       if(Ma_n .gt. 0.d0) then   ! 出口 (外推)
+             B%U(:,i2,j2)=B%U(:,i1,j1)
+             
+		   else 
+              B%U(1,i2,j2)=d_inf
+              B%U(2,i2,j2)=d_inf*u_inf
+              B%U(3,i2,j2)=d_inf*v_inf
+              B%U(4,i2,j2)=p_inf/(gamma-1.d0)+0.5d0*d_inf*(u_inf*u_inf+v_inf*v_inf)
+           endif  
+           temp_rho=B%U(1,i2,j2)
+           temp_u=B%U(2,i2,j2)/temp_rho
+           temp_v=B%U(3,i2,j2)/temp_rho
+           
+           B%S_GKUA(1,i2,j2)=B%U(1,i2,j2)
+           B%S_GKUA(2,i2,j2)= (B%U(2,i2,j2)/temp_rho)*Ma/sqrt(2.0/gamma)
+           B%S_GKUA(3,i2,j2)= (B%U(3,i2,j2)/temp_rho)*Ma/sqrt(2.0/gamma)
+           B%S_GKUA(4,i2,j2)=(B%U(4,i2,j2)-0.5*temp_rho*(temp_u*temp_u+temp_v*temp_v))/(Cv*temp_rho)
+           B%S_GKUA(5,i2,j2)=(B%U(4,i2,j2)-0.5*temp_rho*(temp_u*temp_u+temp_v*temp_v))/(Cv*temp_rho)
+           DO jv=GKUA_JST,GKUA_JEND        
+              jv1=jv+GKUA_JPT
+           DO iv=GKUA_IST,GKUA_IEND      
+              iv1=iv+GKUA_IPT
+              TIJtmp=B%S_GKUA(4,i2,j2)
+              viu=B%vi(iv1)-B%S_GKUA(2,i2,j2)
+              vjv=B%vj(jv1)-B%S_GKUA(3,i2,j2)                    
+              vij2=(viu**2+vjv**2)/TIJtmp
+                    
+              GDVijv=B%S_GKUA(1,i2,j2)/(PI*TIJtmp)*EXP(-vij2)
+              B%FRD(1,i2,j2,iv,jv)=GDVijv 
+              B%FRD(2,i2,j2,iv,jv)=GDVijv*TIJtmp/2. 
+         !     B%FRD(3,i2,j2,iv,jv)=Rdof*GDVijv*B%S_GKUA(5,i2,j2) /2. !7-2
+           ENDDO
+           
+           ENDDO
+           
+        enddo
+	   enddo
+      enddo 
              
                      
         end subroutine GKUA_boundary_farfield

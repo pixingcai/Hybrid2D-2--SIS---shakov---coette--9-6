@@ -92,7 +92,6 @@
     close(99)
     NVIt=KGLN*NVI
     NVJt=KGLN*NVJ
-    Kfly=0   !!7-9
     open(99,file="input/"//"control.in")
     read(99,*)
     read(99,*)
