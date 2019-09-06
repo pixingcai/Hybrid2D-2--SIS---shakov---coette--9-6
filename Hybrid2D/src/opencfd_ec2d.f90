@@ -43,7 +43,7 @@
     end if
 
     do while(Mesh(1)%Kstep .lt. 100000)     
-        call Hybrid_Time_advance(1)
+        call   Hybrid_Time_advance_LU_SGS(1)
         if(mod(Mesh(1)%Kstep, Kstep_show).eq.0)  call DETFP_res
         
         if(myid==0)then

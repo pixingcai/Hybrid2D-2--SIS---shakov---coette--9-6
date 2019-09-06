@@ -1,15 +1,4 @@
 
-    subroutine Hybrid_Time_advance(nMesh)
-   use Global_var
-   implicit none
-   integer:: nMesh
-   if (Time_Method .eq. Time_LU_SGS) then             ! LU-SGS
-     call Hybrid_time_advance_LU_SGS(nMesh)
-   else
-      print*, "This time advance method is not supported!!!"
-   endif
-    end subroutine Hybrid_Time_advance
-    
     !---------------------------------------------------------------------------------------------
 ! Gsis main subroutine for DVM
     subroutine Hybrid_Time_advance_LU_SGS(nMesh)
@@ -50,7 +39,7 @@
     call GKUA_Phy_boundary
     call Hybrid_GKUA_Comput_Block(1)
     call DETFP(Time_Method)
-    !call MassCorrect
+    call MassCorrect
     call Convert_NS(1)
     
     do mBlock=1,MP%Num_Block
@@ -68,11 +57,11 @@
 
     
 
-do mBlock=1,MP%Num_Block
+    do mBlock=1,MP%Num_Block
         B => MP%Block(mBlock)
         nx=B%nx; ny=B%ny
-        do i=1,nx-1
-        do j=1,ny-1
+        do i=3,nx-3
+        do j=3,ny-3
             temprho=B%S0_GKUA(1,i,j)
             tempU=B%S0_GKUA(2,i,j)/Ma*sqrt(2.0/gamma)
             tempV=B%S0_GKUA(3,i,j)/Ma*sqrt(2.0/gamma)
@@ -92,13 +81,11 @@ do mBlock=1,MP%Num_Block
             B%U(2,i,j)=temprhoNS*tempUNS
             B%U(3,i,j)=temprhoNS*tempVNS
             B%U(4,i,j)=Cv*tempTNS*temprhoNS+0.5*temprhoNS*(tempUNS*tempUNS+tempVNS*tempVNS)
-            
-            
-            
-         B%U2(1,i,j)=B%U(1,i,j)
-         B%U2(2,i,j)=B%U(2,i,j)
-         B%U2(3,i,j)=B%U(3,i,j)
-         B%U2(4,i,j)=B%U(4,i,j)
+      
+            B%U2(1,i,j)=B%U(1,i,j)
+            B%U2(2,i,j)=B%U(2,i,j)
+            B%U2(3,i,j)=B%U(3,i,j)
+            B%U2(4,i,j)=B%U(4,i,j)
          
      
         end do
@@ -113,9 +100,11 @@ do mBlock=1,MP%Num_Block
         iter_count=iter_count+1  
         call NS_Time_advance_LU_SGS(1)
         call get_res(res_iter)
-        
-    
+
     end do
+    MP%iter=iter_count
+    print * ,iter_count
+    
     do mBlock=1,MP%Num_Block
           B => MP%Block(mBlock)
           nx=B%nx; ny=B%ny
@@ -128,156 +117,75 @@ do mBlock=1,MP%Num_Block
     end do 
 
     
-    
-    
-    MP%iter=iter_count
-    write(*,*)iter_count
-
-    
-      do mBlock=1,MP%Num_Block
-          B => MP%Block(mBlock)
-          nx=B%nx; ny=B%ny
-
-          do i=3,nx-3
-          do j=3,ny-3
-              temprhoNS=B%U(1,i,j)
-              tempUNS=(B%U(2,i,j)/B%U(1,i,j))
-              tempVNS=(B%U(3,i,j)/B%U(1,i,j))
-              tempTNS=(B%U(4,i,j)-0.5*B%U(1,i,j)*(tempUNS*tempUNS+tempVNS*tempVNS))/(Cv*B%U(1,i,j))
-              
-              
-              temprho=B%U2(1,i,j)
-              tempU=(B%U2(2,i,j)/B%U2(1,i,j))
-              tempV=(B%U2(3,i,j)/B%U2(1,i,j))
-              tempT=(B%U2(4,i,j)-0.5*B%U2(1,i,j)*(tempU*tempU+tempV*tempV))/(Cv*B%U2(1,i,j))
-      
-              B%S0_GKUA(1,i,j)=temprhoNS-temprho
-              B%S0_GKUA(2,i,j)=(tempUNS-tempU)*Ma/sqrt(2.0/gamma)
-              B%S0_GKUA(3,i,j)=(tempVNS-tempV)*Ma/sqrt(2.0/gamma)
-              B%S0_GKUA(4,i,j)=tempTNS-tempT
-              
-              
-   
-              
-              B%S_GKUA(1:4,i,j)=B%S_GKUA(1:4,i,j)+B%S0_GKUA(1:4,i,j)
-              
-               B%S_GKUA(5,i,j)= B%S_GKUA(5,i,j)+B%TaoNS_out(1,i,j)
-               B%S_GKUA(6,i,j)= B%S_GKUA(6,i,j)+B%TaoNS_out(2,i,j)
-               B%S_GKUA(7,i,j)= B%S_GKUA(7,i,j)+B%TaoNS_out(3,i,j)
-               B%S_GKUA(10,i,j)= B%S_GKUA(10,i,j)+B%TaoNS_out(4,i,j)
-               B%S_GKUA(8,i,j)= B%S_GKUA(8,i,j)+B%Q_out(1,i,j)
-               B%S_GKUA(9,i,j)= B%S_GKUA(9,i,j)+B%Q_out(2,i,j)
-              
-                B%S0_GKUA(1:4,i,j)=B%S0_GKUA(1:4,i,j)+B%S00_GKUA(1:4,i,j)
-          end do
-          end do
-          
-      end do  
-      
-         
-      do mBlock=1,MP%Num_Block
-         B => MP%Block(mBlock)
-      
-          nx=B%nx; ny=B%ny
-          do i=3,nx-3
-          do j=3,ny-3
-             crt1=B%S0_GKUA(1,i,j)/(PI*B%S0_GKUA(4,i,j))  !!new values
-             crt2=B%S00_GKUA(1,i,j)/(PI*B%S00_GKUA(4,i,j))    !!old values
-             DO jv=GKUA_JST,GKUA_JEND          !!!  (do jv=1,nvj)
-                jv1=jv+GKUA_JPT
-                vjv1=B%vj(jv1)-B%S0_GKUA(3,i,j)   !!new values
-                vjv2=B%vj(jv1)-B%S00_GKUA(3,i,j)    !!old values
-                DO iv=GKUA_IST,GKUA_IEND          !!!  (do iv=1,nvi)
-                   iv1=iv+GKUA_IPT
-                   viu1=B%vi(iv1)-B%S0_GKUA(2,i,j)  !!new values
-                   viu2=B%vi(iv1)-B%S00_GKUA(2,i,j)   !!old values
-                   
-                   vij21=(viu1**2+vjv1**2)/B%S0_GKUA(4,i,j)  !!new values
-                   vij22=(viu2**2+vjv2**2)/B%S00_GKUA(4,i,j)  !!old values
-                   
-                   GDVijv1=crt1*EXP(-vij21)   !!new values
-                   GDVijv2=crt2*EXP(-vij22)   !!old values
-                   
-                   temp1=(GDVijv1-GDVijv2)
-                   B%FRD(1,i,j,iv,jv)=B%FRD(1,i,j,iv,jv)+temp1
-                  
-                  temp2=(B%S0_GKUA( 4,i,j)*GDVijv1/2.-B%S00_GKUA( 4,i,j)*GDVijv2/2.)
-                  B%FRD(2,i,j,iv,jv)=B%FRD(2,i,j,iv,jv)+temp2
-                ENDDO
-             ENDDO
-             
-          end do
-          end do
-          
-      end do
-    
-     do mBlock=1,MP%Num_Block
-            B => MP%Block(mBlock)
-            nx=B%nx; ny=B%ny
-            do i=3,nx-3
-            do j=3,ny-3
-     
-               B%S00_GKUA(1:10,i,j)=B%S_GKUA(1:10,i,j)
-            end do
-            end do
-     end do
-     
-    call DETFP(Time_Method)
-    
     do mBlock=1,MP%Num_Block
-            B => MP%Block(mBlock)
-            nx=B%nx; ny=B%ny
-            do i=3,nx-3
-            do j=3,ny-3
-    
-               B%S_GKUA(1:4,i,j)= B%S00_GKUA(1:4,i,j)+0.5*B%S_GKUA(1:4,i,j)
-               B%S_GKUA(5:10,i,j)=B%S00_GKUA(5:10,i,j)
-            end do
-            end do
-        
-    end do 
-    !
-   call output (1) 
-!pause
-     Mesh(nMesh)%tt=Mesh(nMesh)%tt+dt_global      ! ʱ�� ��ʹ��ȫ��ʱ�䲽����ʱ�����壩
-     Mesh(nMesh)%Kstep=Mesh(nMesh)%Kstep+1        ! ���㲽��
+        B => MP%Block(mBlock)
+        nx=B%nx; ny=B%ny
+        do i=3,nx-3
+        do j=3,ny-3
+            temprhoNS=B%U(1,i,j)
+            tempUNS=(B%U(2,i,j)/B%U(1,i,j))
+            tempVNS=(B%U(3,i,j)/B%U(1,i,j))
+            tempTNS=(B%U(4,i,j)-0.5*B%U(1,i,j)*(tempUNS*tempUNS+tempVNS*tempVNS))/(Cv*B%U(1,i,j))
+              
+            temprho=B%U2(1,i,j)
+            tempU=(B%U2(2,i,j)/B%U2(1,i,j))
+            tempV=(B%U2(3,i,j)/B%U2(1,i,j))
+            tempT=(B%U2(4,i,j)-0.5*B%U2(1,i,j)*(tempU*tempU+tempV*tempV))/(Cv*B%U2(1,i,j))
+      
+            B%S0_GKUA(1,i,j)=temprhoNS-temprho
+            B%S0_GKUA(2,i,j)=(tempUNS-tempU)*Ma/sqrt(2.0/gamma)
+            B%S0_GKUA(3,i,j)=(tempVNS-tempV)*Ma/sqrt(2.0/gamma)
+            B%S0_GKUA(4,i,j)=tempTNS-tempT
+              
+            B%S_GKUA(1:4,i,j)=B%S_GKUA(1:4,i,j)+B%S0_GKUA(1:4,i,j)
+              
+            B%S_GKUA(5,i,j)= B%S_GKUA(5,i,j)+B%TaoNS_out(1,i,j)
+            B%S_GKUA(6,i,j)= B%S_GKUA(6,i,j)+B%TaoNS_out(2,i,j)
+            B%S_GKUA(7,i,j)= B%S_GKUA(7,i,j)+B%TaoNS_out(3,i,j)
+            B%S_GKUA(10,i,j)= B%S_GKUA(10,i,j)+B%TaoNS_out(4,i,j)
+            B%S_GKUA(8,i,j)= B%S_GKUA(8,i,j)+B%Q_out(1,i,j)
+            B%S_GKUA(9,i,j)= B%S_GKUA(9,i,j)+B%Q_out(2,i,j)
+              
+            B%S0_GKUA(1:4,i,j)=B%S0_GKUA(1:4,i,j)+B%S00_GKUA(1:4,i,j)
+        end do
+        end do
+          
+    end do  
+      
+
+    Mesh(nMesh)%tt=Mesh(nMesh)%tt+dt_global      ! ʱ�� ��ʹ��ȫ��ʱ�䲽����ʱ�����壩
+    Mesh(nMesh)%Kstep=Mesh(nMesh)%Kstep+1        ! ���㲽��
 
 
     end subroutine Hybrid_Time_advance_LU_SGS
     
 
 ! ����в�����NS�飩
-   Subroutine Hybrid_GKUA_Comput_Block(nMesh)
-   use Global_Var
-   use Flow_Var  
-   use Com_ctrl
-   use const_var ,only :sp,dop
-   implicit none
-   real(sp) :: Res
-   integer:: nMesh,mBlock,nx,ny,i,j,m,Nvar1,jv,iv,ird
-         integer :: iv1,jv1,NVIN,NVJN,index_1(4),index_2(4),index_3(4),index_4(4)
-      real(sp)  :: Tij,crt,viu,vjv,vij2,GDVijv,err111(4)
-   Type (Mesh_TYPE),pointer:: MP
-   Type (Block_TYPE),pointer:: B
-!---------------------------------------------  
+    Subroutine Hybrid_GKUA_Comput_Block(nMesh)
+    use Global_Var
+    use Flow_Var  
+    use Com_ctrl
+    use const_var ,only :sp,dop
+    implicit none
+    real(sp) :: Res
+    integer:: nMesh,mBlock,nx,ny,i,j,m,Nvar1,jv,iv,ird
+    integer :: iv1,jv1,NVIN,NVJN,index_1(4),index_2(4),index_3(4),index_4(4)
+    real(sp)  :: Tij,crt,viu,vjv,vij2,GDVijv,err111(4)
+    Type (Mesh_TYPE),pointer:: MP
+    Type (Block_TYPE),pointer:: B
 
-       MP=>Mesh(1)             
+    MP=>Mesh(1)             
 
 !----------------------------------------------
-   do mBlock=1,MP%Num_Block
-     B => MP%Block(mBlock)                 
-     if(B%solver==GKUA)then
-        nx=B%nx; ny=B%ny
-!---------------------------------------------------------------------------------------
+    do mBlock=1,MP%Num_Block
+        B => MP%Block(mBlock)                 
+        if(B%solver==GKUA)then
+            nx=B%nx; ny=B%ny
+            call GKUA_Residual (1,mBlock)       
+        end if
+    enddo   
 
-        call GKUA_Residual (1,mBlock)       
-     end if
-   enddo   
-
-
-
-
-continue
+    continue
     end Subroutine Hybrid_GKUA_Comput_Block
     
     Subroutine Convert_NS(nMesh)
