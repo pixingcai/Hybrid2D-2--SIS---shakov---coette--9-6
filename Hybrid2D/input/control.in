@@ -1,0 +1,27 @@
+ #Inflow Condition#
+ Mole_Mass,   gamma,  KHS,    
+ 40           1.6667            0      
+VHS model :      Alpha     Omiga      Vis_ref          Tref
+                   1              0.81        2.117e-005       273.15
+Sutherland model : S_k        Vis_ref       Tref
+                       148        2.117e-005     273.15
+LJ 12-6 model :    DSLJ,     TSLJ,      vis_ref         Tref       
+                    3.542E-10     93.3      2.117e-005            273.15   
+ Ma           ND_inf(1)     T_inf(K)     Twall(K)    P_outlet      AoA(degree)        Lref(m)
+  0.13536d0       2.23523214e+19        273.15             273.15       -1.d0          0.0           1.0
+#Numerical Scheme for NS#
+Iflag_viscous    Time_Method   Iflag_scheme  Iflag_flux  IFlag_Reconstruction
+    1                     0                1                    5               0
+#Running Model Control#
+ Iflag_init       Iflag_local_dt,     dt_global,         CFL,       dtmax,       dtmin,     tend        Kstep_save        Kstep_show      
+0                   1                    0.01d0             20d0           10           1.d-7         1000.                100               50   
+
+#-------------------------------------------------------
+KHS:Model for viscosity computation:0--VHS model;   1--Sutherland;    2--LJ 12-6
+  integer,parameter:: Scheme_UD1=0,Scheme_NND2=1, Scheme_UD3=2,Scheme_WENO3=3,Scheme_MUSCL2=4,Scheme_MUSCL3=5 ,Scheme_OMUSCL2=6 
+  integer,parameter:: Flux_Steger_Warming=1, Flux_HLL=2, Flux_HLLC=3,Flux_Roe=4,Flux_VanLeer=5,Flux_Ausm=6
+  integer,parameter:: Reconst_Original=0,Reconst_Conservative=1,Reconst_Characteristic=2
+  integer,parameter:: BC_Wall=-10, BC_Farfield=-20
+  integer,parameter:: Time_Euler1=1,Time_RK3=3
+  integer,parameter:: Turbulence_NONE=0, Turbulence_BL=1
+ 

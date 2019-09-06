@@ -1,0 +1,15 @@
+&VelDis
+NVIT=16
+NVJT=16
+KShakhov=1
+KES=0
+fLamda=-0.5
+&end
+
+
+!XDIM=4
+!YDIM=4
+
+
+
+
