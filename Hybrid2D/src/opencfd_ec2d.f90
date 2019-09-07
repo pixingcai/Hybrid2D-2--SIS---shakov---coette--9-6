@@ -81,17 +81,44 @@
     rewind(99)
     read(99,*)
     read(99,*)
-    read(99,*) DVX,NVI,VXdown,VXup
+    read(99,*)Quadrature_Mode
     read(99,*)
+    read(99,*) 
+    read(99,*)
+    read(99,*) k
+    if(k==1)then
+        NVI=7;NVJ=7
+    elseif(k==2)then
+        NVI=8;NVJ=8
+    elseif(k==3)then
+        NVI=16;NVJ=16
+    end if
+    read(99,*) 
+    read(99,*)    
+    read(99,*) DVX,NVI,VXdown,VXup
     read(99,*)
     read(99,*) DVY,NVJ,VYdown,VYup
     read(99,*)
+    read(99,*) KGLN
     read(99,*)
     read(99,*)
-    read(99,*) KGH,KGL,KGLN
+    read(99,*) DVX,NVI,VXdown,VXup
+    read(99,*)
+    read(99,*) DVY,NVJ,VYdown,VYup
+    
     close(99)
-    NVIt=KGLN*NVI
-    NVJt=KGLN*NVJ
+    if(Quadrature_Mode==GKUA_GH)then
+        NVIt=2*NVI
+        NVJt=2*NVJ
+    elseif(Quadrature_Mode==GKUA_GL)then
+        NVIt=KGLN*NVI
+        NVJt=KGLN*NVJ
+    else if(Quadrature_Mode==GKUA_NC)then
+        NVIt=NVI
+        NVJt=NVJ
+    end if
+    
+        
     open(99,file="input/"//"control.in")
     read(99,*)
     read(99,*)

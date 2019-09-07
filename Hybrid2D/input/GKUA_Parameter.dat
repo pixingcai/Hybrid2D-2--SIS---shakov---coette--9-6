@@ -1,12 +1,22 @@
- DVX(Vx-step) NVI(DVX*NVI=VXSPACE) *VXdown*VXup(DISCRETE VEL.:-VXSPACE=<Vx<=VXSPACE)   
- To Gauss-Hermite integration:only input:NVI(velocity points,orther-random)-NVIT=2*NVI+1
-1.8           8          -10.8       10.8
- DVY(Vy-step) NVJ(DVX*NVJ=VYSPACE) *VYdown*VYup(DISCRETE VEL.:-VYSPACE=<Vy<=VYSPACE)
- To Gauss-Hermite integration:only input:NVJ(velocity points,orther-random)-NVJT=2*NVJ+1
- 1.8           8            -10.8       10.8
- *KGH(=1--GAUSS-Hermite integration-restrict:NV<7 or NV=7,8,16,but DV,VSPACE not restrict)
-    KGL(=1--GAUS.LEG.jifen-NVT=2*NV*KGLN+1) KGLN(GAUSS-LEGENDRE" points in each son-space)
-	 (KGH=0,KGL=0--Newton-Cotes equal space integration (DV,2*NV+1,-vspace<Vx<vspace)) 
-	  1           0                            2  
-KHS(1or0) TREF(K)   *DSLJ(m)*    *TSLJ(K)*  *vis_ref*
- 0         260.771      3.711E-10     78.6      1.6541E-5
+##Quadrature method & parameters specify
+Quadrature method:1:--Gauss Hermite ;2:--Gauss Legendre;3:--Newton-Cotes
+1
+#parameter for various quadrature method.Functioning only with corresponding Quadrature method Index
+###############Gauss Hermite#################
+#.1:--7 GH points;2:--8 GH points; 3--16 GH points
+2
+###############Gauss Legendre ################
+#Dvx    Intervals  Vx-lower-bound  Vx upper bound 
+1.8         15             -8                    8
+#Dvx    Intervals  Vx-lower-bound  Vx upper bound 
+1.8         15             -8                    8
+#Inner division:KGLN  --3,4,5,6,9,10 are available
+4
+###############Newton Cotes################
+ #Dvx    Intervals  Vx-lower-bound  Vx upper bound 
+1.8         15             -8                    8
+#Dvx    Intervals  Vx-lower-bound  Vx upper bound 
+1.8         15             -8                    8
+
+
+

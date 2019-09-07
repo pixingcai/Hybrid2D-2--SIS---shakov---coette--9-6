@@ -15,7 +15,8 @@
   integer,parameter:: Hybrid_Mode=1,NS_Mode=2,ES_Mode=3
   integer,parameter:: Time_Euler1=1,Time_RK3=3,Time_LU_SGS=0
   integer,parameter:: Turbulence_NONE=0, Turbulence_BL=1, Turbulence_SA=2,Turbulence_SST=3
-   integer,parameter:: GKUA_Scheme_UP1=0,GKUA_Scheme_NND4A2=1,GKUA_Scheme_WENO3=3
+  integer,parameter:: GKUA_Scheme_UP1=0,GKUA_Scheme_NND4A2=1,GKUA_Scheme_WENO3=3
+  integer,parameter:: GKUA_GH=1,GKUA_GL=2,GKUA_NC=3 
   integer,parameter:: LAP=2                   ! 块和块之间的交叠区(overlap)宽度 （LAP=2最高支持4阶，LAP=3最高支持6阶，LAP=4最高支持8阶精度）
   integer,parameter:: NS_solver=1,GKUA=2 
   real(sp) ,parameter:: PrT=0.9d0                ! PrT 湍流Plandtl数
@@ -29,6 +30,7 @@
  
   implicit none
   integer ::MODE
+  integer ::Quadrature_Mode
   TYPE BC_MSG_TYPE              ! 边界链接信息
    integer::  f_no, face, ist, iend, jst, jend,  neighb, subface, orient
    integer:: ist_neighb,iend_neighb,jst_neighb,jend_neighb
