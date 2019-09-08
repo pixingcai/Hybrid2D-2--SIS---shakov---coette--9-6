@@ -1,73 +1,63 @@
 
 !C-1     This routine "DETFP" solve the flow properties using the reduced velocity
 !C         distributions and dicrete velocity coordinate method.
-      SUBROUTINE DETFP_res
-      use Global_var
-      use Com_ctrl
-      use const_var ,only :sp,dop
-      implicit none
-      integer :: i,j,m,nn,idim,drct,posi,iv,jv,iv1,jv1,ITIME,NIstep,nx,ny,kps
-      integer :: steptmp(ndim),stedtmp(2,ndim)
-      integer :: steptmp2(ndim),ij(ndim),ijws(ndim) !,ijp(ndim)
-      character*80 fname
-      real(sp)  :: IAMatrix(6,6),Amatrix(6,6),res
-      real(sp) ,external::Omiga22
-      real(sp)  :: S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15,S16,ERRm,EPR,CF0IJ,BRHSTMP
-      real(sp)  :: RONIJ,Uij,Vij,us1,vs1,sum_uv,Ttraij,Trotij,Toxxij,Toyyij,Toxyij,Qtra_x,Qtra_y,Qrot_x,Qrot_y,Pij,CFij,CFij_tmp
-      real(sp)  :: taoxx,taoyy,taoxy,taozz,coetmp
-      real(sp)  :: S1tmp,S2tmp,S3tmp,S4tmp,S5tmp,RONintmp,TEMP1
-      integer :: ijp,njpblk,njpbd,njpdim,ijtmp1,IJTMP2
-      real(sp)  :: DRONtmp,DTtrtmp,DUtmp,DVtmp,DQXTMP,DQYTMP
-      real(sp)  :: Sentropyinf,cinf,cpt,FVXDV,TIJtmp,viu,vjv,Machlocal,Miu_tmp
-      real(sp)  :: SBNX1,SBNY1,SBNX2,SBNY2,SBNXY,VTBRY1,VTBRY2,VNBRYACU,CBRYACU
-      real(sp)  :: vij2,GDVijv,SIJ,sbnx,sbny,vninf,vtinf1,vtinf2,vnbry,vnbry1,vnbry2,cbry,riemann1,riemann2,unriemann,Sentropybry
-      integer stats(MPI_STATUS_SIZE)
+    SUBROUTINE DETFP_res
+    use Global_var
+    use Com_ctrl
+    use const_var ,only :sp,dop
+    implicit none
+    integer :: i,j,m,nn,idim,drct,posi,iv,jv,iv1,jv1,ITIME,NIstep,nx,ny,kps
+    integer :: steptmp(ndim),stedtmp(2,ndim)
+    integer :: steptmp2(ndim),ij(ndim),ijws(ndim) !,ijp(ndim)
+    character*80 fname
+    real(sp)  :: IAMatrix(6,6),Amatrix(6,6),res
+    real(sp) ,external::Omiga22
+    real(sp)  :: S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15,S16,ERRm,EPR,CF0IJ,BRHSTMP
+    real(sp)  :: RONIJ,Uij,Vij,us1,vs1,sum_uv,Ttraij,Trotij,Toxxij,Toyyij,Toxyij,Qtra_x,Qtra_y,Qrot_x,Qrot_y,Pij,CFij,CFij_tmp
+    real(sp)  :: taoxx,taoyy,taoxy,taozz,coetmp
+    real(sp)  :: S1tmp,S2tmp,S3tmp,S4tmp,S5tmp,RONintmp,TEMP1
+    integer :: ijp,njpblk,njpbd,njpdim,ijtmp1,IJTMP2
+    real(sp)  :: DRONtmp,DTtrtmp,DUtmp,DVtmp,DQXTMP,DQYTMP
+    real(sp)  :: Sentropyinf,cinf,cpt,FVXDV,TIJtmp,viu,vjv,Machlocal,Miu_tmp
+    real(sp)  :: SBNX1,SBNY1,SBNX2,SBNY2,SBNXY,VTBRY1,VTBRY2,VNBRYACU,CBRYACU
+    real(sp)  :: vij2,GDVijv,SIJ,sbnx,sbny,vninf,vtinf1,vtinf2,vnbry,vnbry1,vnbry2,cbry,riemann1,riemann2,unriemann,Sentropybry
+    integer stats(MPI_STATUS_SIZE)
       
-      Type (Block_TYPE),pointer:: B
-      Type (Mesh_TYPE),pointer:: MP
-       MP=>Mesh(1)   
+    Type (Block_TYPE),pointer:: B
+    Type (Mesh_TYPE),pointer:: MP
+    MP=>Mesh(1)   
   
-       do m=1,MP%Num_Block
-           B => MP%Block(m)
-           B%Res_max=0.0;B%Res_rms=0.0
-           nx=B%nx; ny=B%ny
-           if(B%solver==GKUA)then
-              IF (KGH.EQ.1) THEN
-                  call  GaussHermite_rs(m)
- 
-              ELSE
-                   IF (KGL.EQ.1) THEN
-                      call GaussLegendre_rs(m)
-                   ELSE
-                      
-                      write(*,*)" waiting for further coding"
-                      pause
-                   ENDIF
-              ENDIF
-              !--------------------------------------------------------------------------------------
-                !   统计最大残差和均方根残差 
-                    do j=1,ny-1
-                    do i=1,nx-1
-                ! -------------------------------------------------------------------------------------------
-                !    时间推进
-                       do kps=1,4
-                        Res= B%S00_GKUA(kps,i,j)
-                !--------------------------------------------------------------------------------------------------
-                        if(abs(Res) .gt. B%Res_max(kps))  B%Res_max(kps)=abs(Res)          ! 最大残差
+    do m=1,MP%Num_Block
+        B => MP%Block(m)
+        B%Res_max=0.0;B%Res_rms=0.0
+        nx=B%nx; ny=B%ny
+        if(B%solver==GKUA)then
+            if(Quadrature_Mode==GKUA_GH)then
+                call  GaussHermite_rs(m)
+            elseif(Quadrature_Mode==GKUA_GL)then
+                call GaussLegendre_rs(m)
+            else if(Quadrature_Mode==GKUA_NC)then 
+                write(*,*)" waiting for further coding"
+                stop
+            end if
+  
+        !   统计最大残差和均方根残差 
+            do j=1,ny-1
+            do i=1,nx-1
+                do kps=1,4
+                    Res= B%S00_GKUA(kps,i,j)
+                    if(abs(Res) .gt. B%Res_max(kps))  B%Res_max(kps)=abs(Res)          ! 最大残差
                         B%Res_rms(kps)=B%Res_rms(kps)+Res*Res                           ! 均方根残差      
-                !--------------------------------------------------------------------------------------------------       
-	                   enddo
-                    enddo
-                    enddo
-                    B%Res_rms(:)=sqrt(B%Res_rms(:)/(1.d0*Mesh(1)%Num_Cell))   !    全部网格点的总均方根残差
-         END IF
-      enddo
-
-       
+                enddo
+            enddo
+            enddo
+            B%Res_rms(:)=sqrt(B%Res_rms(:)/(1.d0*Mesh(1)%Num_Cell))   !    全部网格点的总均方根残差
+        endif
+        
+    enddo   
     continue
-
-      RETURN
-      END
+    return
+    end subroutine DETFP_res
 
 !c-----Use 4,9,10-points" Gauss-Legendre integration formula to solve the moments from 
 !c       micro-kinetics to macro-properties in each discrete velocity son-space. 

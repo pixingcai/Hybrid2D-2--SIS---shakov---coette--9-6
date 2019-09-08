@@ -22,7 +22,7 @@
             Bc=> B%bc_msg(ksub)
            if(Bc%neighb .lt. 0 ) then               ! 非内边界
                   if( Bc%neighb .eq. BC_Wall ) then
-                      call boundary_wall(nMesh,mBlock,ksub)         ! 固壁边界
+                      !call boundary_wall(nMesh,mBlock,ksub)         ! 固壁边界
                   else if( Bc%neighb .eq. BC_Farfield ) then
                       call boundary_Farfield(nMesh,mBlock,ksub)     ! 远场边界
                   else if( Bc%neighb .eq. BC_Symmetry_or_slidewall ) then

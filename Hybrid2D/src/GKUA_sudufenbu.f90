@@ -1,65 +1,59 @@
-!C---- This routine "sudufenbu" set discrete velocity points using the discrete velocity
-!C       coordinate method,and check reliability of the the discrete velocity points
-!c       by the integrating-obtained macro-properties using Maxwellian velocity distribution.
-!c     Notice:in the following arrays:vd(nvt),wd(nvt),nvt=max(NVIt,NVJt).
-      SUBROUTINE GKUA_sudufenbu
-      use Global_var
-      use Com_ctrl
-      use const_var ,only :sp,dop
-      implicit none
-      integer :: m,iv,iv1,jv,jv1,i,j,NVIN,NVJN,index_1(4),index_2(4),index_3(4),index_4(4)
-      real(sp)  :: Tij,crt,viu,vjv,vij2,GDVijv,err111(4)
-      Type (Block_TYPE),pointer:: B
-      Type (Mesh_TYPE),pointer:: MP
-       MP=>Mesh(1)   
-!C---- Set discrete velocity points using the discrete velocity coordinate method:
-1     call GKUA_lisansudu
-      if (myid == 0) then
-         write(*,*) 'out of "lisansudu"'
-      endif
-!!c---- To check reliability of the discrete velocity points,
-!!c---- Set Maxwellian velocity distribution and Store intial macro-properties:
+!---- This routine "sudufenbu" set discrete velocity points using the discrete velocity
+!      coordinate method,and check reliability of the the discrete velocity points
+!       by the integrating-obtained macro-properties using Maxwellian velocity distribution.
+!     Notice:in the following arrays:vd(nvt),wd(nvt),nvt=max(NVIt,NVJt).
+    SUBROUTINE GKUA_sudufenbu
+    use Global_var
+    use Com_ctrl
+    use const_var ,only :sp,dop
+    implicit none
+    integer :: m,iv,iv1,jv,jv1,i,j,NVIN,NVJN,index_1(4),index_2(4),index_3(4),index_4(4)
+    integer :: ivp
+    real(sp)  :: Tij,crt,viu,vjv,vij2,GDVijv,err111(4)
+    Type (Block_TYPE),pointer:: B
+    Type (Mesh_TYPE),pointer:: MP
+    MP=>Mesh(1)   
+!---- Set discrete velocity points using the discrete velocity coordinate method:
+1 call GKUA_lisansudu
+
+!!---- To check reliability of the discrete velocity points,
+!!---- Set Maxwellian velocity distribution and Store intial macro-properties:
        
-      do m=1,MP%Num_Block
-           B => MP%Block(m)
-           if(B%solver==GKUA)then 
-           do j=-1,B%ny+1
-              do i=-1,B%nx+1      
-                 crt=B%S_GKUA(1,i,j)/(PI*B%S_GKUA(4,i,j))  
-                 DO jv=GKUA_JST,GKUA_JEND          !!!  (do jv=1,nvj)
+    do m=1,MP%Num_Block
+        B => MP%Block(m)
+        if(B%solver==GKUA)then 
+            do j=-1,B%ny+1
+            do i=-1,B%nx+1      
+                crt=B%S_GKUA(1,i,j)/(PI*B%S_GKUA(4,i,j))  
+                do jv=GKUA_JST,GKUA_JEND          !!!  (do jv=1,nvj)
                    jv1=jv+GKUA_JPT
                    vjv=B%vj(jv1)-B%S_GKUA(3,i,j)
-                     DO iv=GKUA_IST,GKUA_IEND          !!!  (do iv=1,nvi)
-                        iv1=iv+GKUA_IPT
-                        viu=B%vi(iv1)-B%S_GKUA(2,i,j)
-                        vij2=(viu**2+vjv**2)/B%S_GKUA(4,i,j)
-                        GDVijv=crt*EXP(-vij2)
-                         B%FRD(1,i,j,iv,jv)=GDVijv
-                         B%FRD(2,i,j,iv,jv)=B%S_GKUA( 4,i,j)*GDVijv/2.
+                do iv=GKUA_IST,GKUA_IEND          !!!  (do iv=1,nvi)
+                    iv1=iv+GKUA_IPT
+                    viu=B%vi(iv1)-B%S_GKUA(2,i,j)
+                    vij2=(viu**2+vjv**2)/B%S_GKUA(4,i,j)
+                    GDVijv=crt*EXP(-vij2)
+                    B%FRD(1,i,j,iv,jv)=GDVijv
+                    B%FRD(2,i,j,iv,jv)=B%S_GKUA( 4,i,j)*GDVijv/2.
                       !   B%FRD(3,i,j,iv,jv)=Rdof*B%S_GKUA( 5,i,j)*GDVijv/2.
-                        ENDDO
-                       ENDDO
+                enddo
+                enddo
+            enddo
+            enddo
+            call GKUA_Phy_boundary
+        end if
+        continue
+    end do
 
-                     ENDDO 
-           ENDDO 
-           call GKUA_Phy_boundary
-           end if
-           
-          continue
-      end do
-    
-      continue
-     
 
-!!C---- Decide the macro-properties related to the Maxwellian velocity distribution:
-      if(myid==0) then
-         write(*,*)'By initial "sudufenbu", cal. macro-properties-"detfp"'
-      endif
-     call DETFP(Time_Method)
-
-      if(myid==0) then
+!!---- Decide the macro-properties related to the Maxwellian velocity distribution:
+    if(myid==0) then
+        write(*,*)'By initial "sudufenbu", cal. macro-properties-"detfp"'
+    endif
+    call DETFP(Time_Method)
+    if(myid==0) then
         write(*,*) 'Initial vel. distribution ERR--<eps-"enter"=',err,eps
-      endif
+    endif
       CONTINUE
       IF (ERR .GT. EPS) THEN
          if(myid==0) then

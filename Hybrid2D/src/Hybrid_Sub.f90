@@ -39,118 +39,118 @@
     call GKUA_Phy_boundary
     call Hybrid_GKUA_Comput_Block(1)
     call DETFP(Time_Method)
-    call MassCorrect
+    !call MassCorrect
     call Convert_NS(1)
     
-    do mBlock=1,MP%Num_Block
-            B => MP%Block(mBlock)
-            nx=B%nx; ny=B%ny
-            do i=1,nx-1
-            do j=1,ny-1
-                B%S0_GKUA(1:10,i,j)=B%S_GKUA(1:10,i,j)-B%S0_GKUA(1:10,i,j)
-                B%S00_GKUA(1:10,i,j)=B%S_GKUA(1:10,i,j)
-            end do
-            end do
-        
-    end do  
-    
-
-    
-
-    do mBlock=1,MP%Num_Block
-        B => MP%Block(mBlock)
-        nx=B%nx; ny=B%ny
-        do i=3,nx-3
-        do j=3,ny-3
-            temprho=B%S0_GKUA(1,i,j)
-            tempU=B%S0_GKUA(2,i,j)/Ma*sqrt(2.0/gamma)
-            tempV=B%S0_GKUA(3,i,j)/Ma*sqrt(2.0/gamma)
-            tempT=B%S0_GKUA(4,i,j)
-            
-            temprhoNS=B%U0(1,i,j)
-            tempUNS=B%U0(2,i,j)/B%U0(1,i,j)
-            tempVNS=B%U0(3,i,j)/B%U0(1,i,j)
-            tempTNS=(B%U0(4,i,j)-0.5*B%U0(1,i,j)*(tempUNS*tempUNS+tempVNS*tempVNS))/(Cv*B%U0(1,i,j))
-            
-            temprhoNS=temprhoNS+temprho
-            tempUNS=tempUNS+tempU
-            tempVNS=tempVNS+tempV
-            tempTNS=tempTNS+tempT
-            
-            B%U(1,i,j)=temprhoNS
-            B%U(2,i,j)=temprhoNS*tempUNS
-            B%U(3,i,j)=temprhoNS*tempVNS
-            B%U(4,i,j)=Cv*tempTNS*temprhoNS+0.5*temprhoNS*(tempUNS*tempUNS+tempVNS*tempVNS)
-      
-            B%U2(1,i,j)=B%U(1,i,j)
-            B%U2(2,i,j)=B%U(2,i,j)
-            B%U2(3,i,j)=B%U(3,i,j)
-            B%U2(4,i,j)=B%U(4,i,j)
-         
-     
-        end do
-        end do
-        
-    end do
-    
-   
-
-  
-    do while(res_iter.gt.1E-6)
-        iter_count=iter_count+1  
-        call NS_Time_advance_LU_SGS(1)
-        call get_res(res_iter)
-
-    end do
-    MP%iter=iter_count
-    print * ,iter_count
-    
-    do mBlock=1,MP%Num_Block
-          B => MP%Block(mBlock)
-          nx=B%nx; ny=B%ny
-          do i=3,nx-3
-          do j=3,ny-3
-            B%U0(1:4,i,j)=B%U(1:4,i,j)  
-          end do
-          end do
-          
-    end do 
-
-    
-    do mBlock=1,MP%Num_Block
-        B => MP%Block(mBlock)
-        nx=B%nx; ny=B%ny
-        do i=3,nx-3
-        do j=3,ny-3
-            temprhoNS=B%U(1,i,j)
-            tempUNS=(B%U(2,i,j)/B%U(1,i,j))
-            tempVNS=(B%U(3,i,j)/B%U(1,i,j))
-            tempTNS=(B%U(4,i,j)-0.5*B%U(1,i,j)*(tempUNS*tempUNS+tempVNS*tempVNS))/(Cv*B%U(1,i,j))
-              
-            temprho=B%U2(1,i,j)
-            tempU=(B%U2(2,i,j)/B%U2(1,i,j))
-            tempV=(B%U2(3,i,j)/B%U2(1,i,j))
-            tempT=(B%U2(4,i,j)-0.5*B%U2(1,i,j)*(tempU*tempU+tempV*tempV))/(Cv*B%U2(1,i,j))
-      
-            B%S0_GKUA(1,i,j)=temprhoNS-temprho
-            B%S0_GKUA(2,i,j)=(tempUNS-tempU)*Ma/sqrt(2.0/gamma)
-            B%S0_GKUA(3,i,j)=(tempVNS-tempV)*Ma/sqrt(2.0/gamma)
-            B%S0_GKUA(4,i,j)=tempTNS-tempT
-              
-            B%S_GKUA(1:4,i,j)=B%S_GKUA(1:4,i,j)+B%S0_GKUA(1:4,i,j)
-              
-            B%S_GKUA(5,i,j)= B%S_GKUA(5,i,j)+B%TaoNS_out(1,i,j)
-            B%S_GKUA(6,i,j)= B%S_GKUA(6,i,j)+B%TaoNS_out(2,i,j)
-            B%S_GKUA(7,i,j)= B%S_GKUA(7,i,j)+B%TaoNS_out(3,i,j)
-            B%S_GKUA(10,i,j)= B%S_GKUA(10,i,j)+B%TaoNS_out(4,i,j)
-            B%S_GKUA(8,i,j)= B%S_GKUA(8,i,j)+B%Q_out(1,i,j)
-            B%S_GKUA(9,i,j)= B%S_GKUA(9,i,j)+B%Q_out(2,i,j)
-              
-            B%S0_GKUA(1:4,i,j)=B%S0_GKUA(1:4,i,j)+B%S00_GKUA(1:4,i,j)
-        end do
-        end do
-          
-    end do  
+    !do mBlock=1,MP%Num_Block
+    !        B => MP%Block(mBlock)
+    !        nx=B%nx; ny=B%ny
+    !        do i=1,nx-1
+    !        do j=1,ny-1
+    !            B%S0_GKUA(1:10,i,j)=B%S_GKUA(1:10,i,j)-B%S0_GKUA(1:10,i,j)
+    !            B%S00_GKUA(1:10,i,j)=B%S_GKUA(1:10,i,j)
+    !        end do
+    !        end do
+    !    
+    !end do  
+    !
+    !
+    !
+    !
+    !do mBlock=1,MP%Num_Block
+    !    B => MP%Block(mBlock)
+    !    nx=B%nx; ny=B%ny
+    !    do i=3,nx-3
+    !    do j=3,ny-3
+    !        temprho=B%S0_GKUA(1,i,j)
+    !        tempU=B%S0_GKUA(2,i,j)/Ma*sqrt(2.0/gamma)
+    !        tempV=B%S0_GKUA(3,i,j)/Ma*sqrt(2.0/gamma)
+    !        tempT=B%S0_GKUA(4,i,j)
+    !        
+    !        temprhoNS=B%U0(1,i,j)
+    !        tempUNS=B%U0(2,i,j)/B%U0(1,i,j)
+    !        tempVNS=B%U0(3,i,j)/B%U0(1,i,j)
+    !        tempTNS=(B%U0(4,i,j)-0.5*B%U0(1,i,j)*(tempUNS*tempUNS+tempVNS*tempVNS))/(Cv*B%U0(1,i,j))
+    !        
+    !        temprhoNS=temprhoNS+temprho
+    !        tempUNS=tempUNS+tempU
+    !        tempVNS=tempVNS+tempV
+    !        tempTNS=tempTNS+tempT
+    !        
+    !        B%U(1,i,j)=temprhoNS
+    !        B%U(2,i,j)=temprhoNS*tempUNS
+    !        B%U(3,i,j)=temprhoNS*tempVNS
+    !        B%U(4,i,j)=Cv*tempTNS*temprhoNS+0.5*temprhoNS*(tempUNS*tempUNS+tempVNS*tempVNS)
+    !  
+    !        B%U2(1,i,j)=B%U(1,i,j)
+    !        B%U2(2,i,j)=B%U(2,i,j)
+    !        B%U2(3,i,j)=B%U(3,i,j)
+    !        B%U2(4,i,j)=B%U(4,i,j)
+    !     
+    ! 
+    !    end do
+    !    end do
+    !    
+    !end do
+    !
+    !
+    !
+    !
+    !do while(res_iter.gt.1E-6)
+    !    iter_count=iter_count+1  
+    !    call NS_Time_advance_LU_SGS(1)
+    !    call get_res(res_iter)
+    !
+    !end do
+    !MP%iter=iter_count
+    !print * ,iter_count
+    !
+    !do mBlock=1,MP%Num_Block
+    !      B => MP%Block(mBlock)
+    !      nx=B%nx; ny=B%ny
+    !      do i=3,nx-3
+    !      do j=3,ny-3
+    !        B%U0(1:4,i,j)=B%U(1:4,i,j)  
+    !      end do
+    !      end do
+    !      
+    !end do 
+    !
+    !
+    !do mBlock=1,MP%Num_Block
+    !    B => MP%Block(mBlock)
+    !    nx=B%nx; ny=B%ny
+    !    do i=3,nx-3
+    !    do j=3,ny-3
+    !        temprhoNS=B%U(1,i,j)
+    !        tempUNS=(B%U(2,i,j)/B%U(1,i,j))
+    !        tempVNS=(B%U(3,i,j)/B%U(1,i,j))
+    !        tempTNS=(B%U(4,i,j)-0.5*B%U(1,i,j)*(tempUNS*tempUNS+tempVNS*tempVNS))/(Cv*B%U(1,i,j))
+    !          
+    !        temprho=B%U2(1,i,j)
+    !        tempU=(B%U2(2,i,j)/B%U2(1,i,j))
+    !        tempV=(B%U2(3,i,j)/B%U2(1,i,j))
+    !        tempT=(B%U2(4,i,j)-0.5*B%U2(1,i,j)*(tempU*tempU+tempV*tempV))/(Cv*B%U2(1,i,j))
+    !  
+    !        B%S0_GKUA(1,i,j)=temprhoNS-temprho
+    !        B%S0_GKUA(2,i,j)=(tempUNS-tempU)*Ma/sqrt(2.0/gamma)
+    !        B%S0_GKUA(3,i,j)=(tempVNS-tempV)*Ma/sqrt(2.0/gamma)
+    !        B%S0_GKUA(4,i,j)=tempTNS-tempT
+    !          
+    !        B%S_GKUA(1:4,i,j)=B%S_GKUA(1:4,i,j)+B%S0_GKUA(1:4,i,j)
+    !          
+    !        B%S_GKUA(5,i,j)= B%S_GKUA(5,i,j)+B%TaoNS_out(1,i,j)
+    !        B%S_GKUA(6,i,j)= B%S_GKUA(6,i,j)+B%TaoNS_out(2,i,j)
+    !        B%S_GKUA(7,i,j)= B%S_GKUA(7,i,j)+B%TaoNS_out(3,i,j)
+    !        B%S_GKUA(10,i,j)= B%S_GKUA(10,i,j)+B%TaoNS_out(4,i,j)
+    !        B%S_GKUA(8,i,j)= B%S_GKUA(8,i,j)+B%Q_out(1,i,j)
+    !        B%S_GKUA(9,i,j)= B%S_GKUA(9,i,j)+B%Q_out(2,i,j)
+    !          
+    !        B%S0_GKUA(1:4,i,j)=B%S0_GKUA(1:4,i,j)+B%S00_GKUA(1:4,i,j)
+    !    end do
+    !    end do
+    !      
+    !end do  
       
 
     Mesh(nMesh)%tt=Mesh(nMesh)%tt+dt_global      ! ʱ�� ��ʹ��ȫ��ʱ�䲽����ʱ�����壩

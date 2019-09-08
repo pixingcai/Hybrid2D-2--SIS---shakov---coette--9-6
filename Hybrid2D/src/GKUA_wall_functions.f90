@@ -90,11 +90,12 @@
        steptmp=0.0
        ibegin=Bc%ist; iend=Bc%iend; jbegin=Bc%jst; jend=Bc%jend  
        sumnw =0.;sumnw0=0.;sumnw1 =0.;sumnw01 =0.
-    IF (KGH.EQ.1) THEN
+      if(Quadrature_Mode==GKUA_GH)then
           call NWGaussHerimte(nm,nn,sumnw,wall_u,wall_v)
-      ELSEIF (KGL.EQ.1) THEN
+      elseif(Quadrature_Mode==GKUA_GL)then  
           call NWGaussLegendre(nm,nn,sumnw,wall_u,wall_v)
       ELSE
+          stop
      !     call NWNewtonCotes(nm,nn,sumnw,wall_u)
       ENDIF
           

@@ -368,19 +368,19 @@
        close(99)
        filename="flow2d-GKUA"
        open(99,file="output/"//trim(filename)//".dat")
-       write(99,*) "variables=x,y,d,u,v,T,p,txx,tyy,txy,qx,qy,tzz"
+       write(99,*) "variables=x,y,d,u,v,T,p,txx,tyy,txy,qx,qy,tzz,cf"
         do m=1,MP%Num_Block
          B => Mesh(1)%Block(m)
          if(B%solver==GKUA)then
-         write(99,*)  " zone ", "i= ", B%nx-1, " j= ", B%ny-1
-  	     do j=1,B%ny-1
-	     do i=1,B%nx-1
+         write(99,*)  " zone ", "i= ", B%nx+1, " j= ", B%ny+1
+  	     do j=0,B%ny
+	     do i=0,B%nx
            d1=B%S_GKUA(1,i,j);u1=B%S_GKUA(2,i,j);v1=B%S_GKUA(3,i,j)
            T1=B%S_GKUA(4,i,j);txx=B%S_GKUA(5,i,j)-d1*T1;tyy=B%S_GKUA(6,i,j)-d1*T1
            txy=B%S_GKUA(7,i,j);qx=B%S_GKUA(8,i,j);qy=B%S_GKUA(9,i,j)
            tzz=B%S_GKUA(10,i,j)-d1*T1
            temp=-(qx*Pr+v1*txy)*B%CF(i,j)
-         write(99,"(13f15.10)") B%x1(i,j),B%y1(i,j), d1,u1,v1,T1,d1*T1,txx,tyy,txy,qx,qy,tzz
+         write(99,"(14f15.10)") B%x1(i,j),B%y1(i,j), d1,u1,v1,T1,d1*T1,txx,tyy,txy,qx,qy,tzz,B%CF(i,j)
     
          enddo
          enddo

@@ -59,12 +59,7 @@
       
     !   call DETQnwall(nm,nn)
 
-      IF (KGH.EQ.1) THEN
-    
-       
-      ELSE IF (KGL.EQ.1) THEN
-      !   call GaussLegendrewall(nm,nn)
-      END IF
+
       do i=ibegin,iend    
         do j=jbegin,jend
             icheck=max(ibegin,iend)
@@ -90,32 +85,7 @@
              ENDDO
              
            
-         !S1=BC%Swall( 1,pos_x,pos_y)
-         !S2=BC%Swall( 2,pos_x,pos_y)
-         !S3=BC%Swall( 3,pos_x,pos_y)
-         !S4=BC%Swall( 4,pos_x,pos_y)
-         !S5=BC%Swall( 5,pos_x,pos_y)
-         !S6=BC%Swall( 6,pos_x,pos_y)
-         !S7=BC%Swall( 7,pos_x,pos_y)
-         !S8=BC%Swall( 8,pos_x,pos_y)
-         !S9=BC%Swall( 9,pos_x,pos_y)
-         !S10=BC%Swall(10,pos_x,pos_y)
-         !
-         !RONIJ=BC%Swall(1,pos_x,pos_y)
-         !Uij  =BC%Swall(2,pos_x,pos_y)/RONIJ
-         !Vij  =BC%Swall(3,pos_x,pos_y)/RONIJ
-         !BC%Swall( 2,pos_x,pos_y)=Uij
-         !BC%Swall( 3,pos_x,pos_y)=Vij
-         !sum_uv=Uij*Uij+Vij*Vij
-         !Tij=(BC%Swall( 4,pos_x,pos_y)-RONIJ*sum_uv)/(1.5*RONIJ)
-         !if(Tij.LE.0.)Tij=Twall
-         !BC%Swall( 4,pos_x,pos_y)=Tij
-         !Trotij=2.*S5/(Rdof*S1)
-         !BC%Swall( 5,pos_x,pos_y)=Trotij
-         !BC%Swall( 7,pos_x,pos_y)=2.*(BC%Swall( 7,pos_x,pos_y)-RONIJ*Uij*Uij) !Taoxx
-         !BC%Swall( 8,pos_x,pos_y)=2.*(BC%Swall( 8,pos_x,pos_y)-RONIJ*Uij*Vij) !Taoxy
-         !BC%Swall( 9,pos_x,pos_y)=2.*(BC%Swall( 9,pos_x,pos_y)-RONIJ*Vij*Vij) !Taoyy   
-         !BC%Swall(10,pos_x,pos_y)=2.*BC%Swall(10,pos_x,pos_y) !Taozz
+
        enddo
      enddo
      ! 

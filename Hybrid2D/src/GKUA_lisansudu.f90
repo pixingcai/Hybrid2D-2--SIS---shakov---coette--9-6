@@ -1,38 +1,38 @@
 !C
 !C---- This routine "lisansudu" set discrete velocity points using the discrete velocity
 !C       coordinate method.
-      SUBROUTINE GKUA_lisansudu
-      use Global_var
-      use Com_ctrl
-      use const_var ,only :sp,dop
-      implicit none 
-      real(sp)  ::vd(nvt),wd(nvt),fbav(nvt)
-      integer :: iv,jv,NV0,m,NV0X,NV0Y,iv0
-      Type (Block_TYPE),pointer:: B
-      Type (Mesh_TYPE),pointer:: MP
-       MP=>Mesh(1)   
+    subroutine GKUA_lisansudu
+    use Global_var
+    use Com_ctrl
+    use const_var ,only :sp,dop
+    implicit none 
+    real(sp)  ::vd(nvt),wd(nvt),fbav(nvt)
+    integer :: iv,jv,NV0,m,NV0X,NV0Y,iv0
+    Type (Block_TYPE),pointer:: B
+    Type (Mesh_TYPE),pointer:: MP
+    MP=>Mesh(1)   
        
 !C---- Check dimension size on X-direction discrete velocity points whether to overflow: 
-      do iv=1,nvt
-         vd(iv)=0.
-         wd(iv)=0.
-      enddo
-      IF (NVI.GT.NVIT) THEN
+    do iv=1,nvt
+        vd(iv)=0.
+        wd(iv)=0.
+    enddo
+    if (NVI.GT.NVIT) then
          if (myid == 0) then
             WRITE(*,*)'Why X-direction(NVI>NVIT)? & 
                    $   To continue RUN please input"enter"'
          endif
-      ENDIF
+    endif
 !---- Check dimension size on Y-direction discrete velocity points whether or not to overflow: 
-      IF (NVJ.GT.NVJT) THEN
-         if (myid == 0) then
+    if (NVJ.GT.NVJT) then
+        if (myid == 0) then
             WRITE(*,*)'Why Y-direction(NVJ>NVJT)? &
                    &   To continue RUN please input"enter"'
          endif
-      ENDIF
+    endif
 
-      call lisanv(NVI,dvx,vxdown,vxup,VD,WD,FBAV,NV0)
-      do m=1,MP%Num_Block
+    call lisanv(NVI,dvx,vxdown,vxup,VD,WD,FBAV,NV0)
+    do m=1,MP%Num_Block
            B => MP%Block(m)
            if(B%solver==GKUA)then 
            do iv=1,NVI
@@ -40,8 +40,8 @@
               B%wi(iv)=wd(iv)
            enddo
            end if
-      end do
-      if (kgl.eq.1) then
+    end do
+    if(Quadrature_Mode==GKUA_GL)then
           
          NV0X=NV0
         do m=1,MP%Num_Block
@@ -54,91 +54,78 @@
         end do
         WRITE(*,*)NV0
         CONTINUE
-      endif
-      call lisanv(NVJ,dvy,vydown,vyup,VD,WD,FBAV,NV0)
-     do m=1,MP%Num_Block
+    endif
+    
+    call lisanv(NVJ,dvy,vydown,vyup,VD,WD,FBAV,NV0)
+    do m=1,MP%Num_Block
         B => MP%Block(m)
-          if(B%solver==GKUA)then 
+        if(B%solver==GKUA)then 
             do jv=1,NVJ
                B%vj(jv)=vd(jv)
                B%wj(jv)=wd(jv)
             enddo
           end if
-     end do
+    end do
      
-      if (kgl.eq.1) then
-         NV0Y=NV0
-         do m=1,MP%Num_Block
-             B => MP%Block(m)
-             if(B%solver==GKUA)then 
+    if(Quadrature_Mode==GKUA_GL)then
+        NV0Y=NV0
+        do m=1,MP%Num_Block
+            B => MP%Block(m)
+            if(B%solver==GKUA)then 
                 do iv0=1,nv0y
                   B%fbavy(iv0)=fbav(iv0)
                 enddo
              end if
          end do
         
-      endif
-      IF (myid == 0) then
+    endif
+    if (myid == 0) then
         WRITE(*,*) 'X-direction-velocity point:NVIT,NVI=',NVIT,NVI
         WRITE(*,*) 'Y-direction-velocity point:NVJT,NVJ=',NVJT,NVJ
-      endif
-      IF (NVJ.GT.NVJT .or. NVI.GT.NVIT) THEN
-         IF (myid == 0) then
+    endif
+    if (NVJ.GT.NVJT .or. NVI.GT.NVIT) then
+        IF (myid == 0) then
          WRITE(*,*)'Why(NVI>NVIT,or NVJ>NVJT)-CONTINUE RUN,input"enter"'
          ENDIF
-      END IF
-      RETURN
-      END   SUBROUTINE GKUA_lisansudu          
+    end if
+      return
+    end subroutine GKUA_lisansudu          
 
-      SUBROUTINE lisanv(nv,dv,vdown,vup,VD,WD,FBAV,NV0)
-      use Global_var
-      use Com_ctrl
-      use const_var ,only :sp,dop
-      implicit none
-      integer:: nv ,NV0,IV
-      real(sp)  ::dv ,vdown,vup
-      real(sp) :: vd(nvt),wd(nvt),VD0(nvt),WD0(nvt),FBAV(nvt),DVMAX,DVMIN,dviv1
-      IF (KGH.EQ.1) THEN
-        IF (NV.EQ.7 .OR. NV.EQ.8 .OR. NV.EQ.16) THEN
-           !if (myid == 0 .and. KP.EQ.0 ) then
-           !   WRITE(21,*)'Using Gauss-Hermite table to acquire & 
-           !            &  discrete velocity ordinate points and weights'
-           !endif
-          call GaussHermite(VD0,WD0,NV)
-        ENDIF
-        DO IV=1,NV
+    SUBROUTINE lisanv(nv,dv,vdown,vup,VD,WD,FBAV,NV0)
+    use Global_var
+    use Com_ctrl
+    use const_var ,only :sp,dop
+    implicit none
+    integer:: nv ,NV0,IV
+    real(sp)  ::dv ,vdown,vup
+    real(sp) :: vd(nvt),wd(nvt),VD0(nvt),WD0(nvt),FBAV(nvt),DVMAX,DVMIN,dviv1
+    VD0=0.0;WD0=0.0
+    if(Quadrature_Mode==GKUA_GH)then
+        if (NV.EQ.7 .OR. NV.EQ.8 .OR. NV.EQ.16) then
+            call GaussHermite(VD0,WD0,NV)
+        else
+            write(*,*)"error Gauss Hermite Quadrature parameter"
+            stop
+        endif
+        do IV=1,NV
            VD(IV)=-VD0(NV+1-IV)
            WD(IV)=WD0(NV+1-IV)
            VD(NV+IV)=VD0(IV)
            WD(NV+IV)=WD0(IV)
-        ENDDO
+        enddo
         NV=2*NV
-        if (myid == 0 .and. KPtmp.EQ.0 ) then
-           !WRITE(21,*)'DISCRETE VELOCITY POINTS &
-           !       &    AND WEIGHTS:VD(IV),WD(IV)'
-           DO IV=1,NV
-              !WRITE(21,*) iv,VD(IV),WD(IV)
-           END DO
-        endif
-!c        vspace=vd(nv)
         vdown=-vd(nv)
         vup=vd(nv)
-      ELSE
-         DO IV=1,NV+1
+    elseif(Quadrature_Mode==GKUA_GL)then  
+        do IV=1,NV+1
             VD(IV)=vdown+REAL(IV-1)*DV
             VD0(IV)=VD(IV)
-         ENDDO
-         if (myid == 0) then
+        end do
+        if (myid == 0) then
             WRITE(*,*)'As NVT>8,roots and weights of GAUSS-HERMITE"s &
                     &  integral are uneasily determined.'
          endif
-         IF (KGL.EQ.1) THEN
-            if (myid == 0 .and. KPtmp.EQ.0 ) then
-               !WRITE(21,*)'Use Newton-Legendre integration fomula with &
-               !        &   non-equal nodes and weights!'
-               !WRITE(21,*)'use space nonequal nodes:KGLN=3,4,5,6,9,10'
-            endif
-            call VNODEQUAN(VD0,NV,VD,WD,FBAV,NV0)
+        call VNODEQUAN(VD0,NV,VD,WD,FBAV,NV0)
             DVMAX=0.0
             DVMIN=10.
             DO IV=2,NV
@@ -157,7 +144,7 @@
           !     WRITE(21,*)'Use KGLN=3,4,5,6,9,10-points" Gauss-Legendre&
           !& integral"', ' in each DV son-space:DVMAX,DVMIN=',DVMAX,DVMIN
             endif
-         ELSE
+    else if(Quadrature_Mode==GKUA_NC)then   
            NV=NV+1
            if (myid == 0 .and. KPtmp.EQ.0 ) then
              WRITE(*,*)'   --Use Newton-cotes fomula with equal space--'
@@ -170,10 +157,13 @@
              END DO
              WRITE(*,*)'discrete vel. cellsize:DV=',DV
            endif
-         END IF
-      END IF
-      RETURN
-      END     
+           
+    else 
+             write(*,*)"Quadrature mode error "
+             stop
+    end if
+    RETURN
+    END     
 
         
 !c---- Discrete (Vx,Vy) velocity space by Gauss-Legendre integrating formula.

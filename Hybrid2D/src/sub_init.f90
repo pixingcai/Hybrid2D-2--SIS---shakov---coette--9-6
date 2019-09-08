@@ -413,10 +413,10 @@
         do j=-1,B%ny+1
         do i=-1,B%nx+1
           
-            B%U0(1,i,j)=d0
-            B%U0(2,i,j)=d0*u0
-            B%U0(3,i,j)=d0*v0
-            B%U0(4,i,j)=p0/(gamma-1.d0)+0.5d0*d0*(u0*u0+v0*v0)
+            B%U(1,i,j)=d0
+            B%U(2,i,j)=d0*u0
+            B%U(3,i,j)=d0*v0
+            B%U(4,i,j)=p0/(gamma-1.d0)+0.5d0*d0*(u0*u0+v0*v0)
         enddo
         enddo
         if(B%solver==GKUA)then
